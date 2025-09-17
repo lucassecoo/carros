@@ -1,23 +1,18 @@
 from django import forms
 from  cars.models import Brand, Car
 
-class CarForm(forms.Form):
-    model = forms.CharField(max_length=200)
-    brand = forms.ModelChoiceField(Brand.objects.all())
-    factory_year = forms.IntegerField()
-    model_year = forms.IntegerField()
-    plate = forms.CharField(max_length=10)
-    value = forms.FloatField()
-    photo = forms.ImageField()
+class CarModelForm(forms.ModelForm): #monta o form automaticamente de Car
+    class Meta:
+        model = Car
+        fields = '__all__'
 
-    def save(self):
-        car = Car(
-            model = self.cleaned_data['model'],
-            brand=self.cleaned_data['brand'],
-            factory_year=self.cleaned_data['factory_year'],
-            model_year=self.cleaned_data['model_year'],
-            value=self.cleaned_data['value'],
-            photo=self.cleaned_data['photo'],
-        )
-        car.save()
-        return car
+class BrandModelForm(forms.ModelForm): #monta o form automaticamente de Brand
+    class Meta:
+        model = Brand
+        fields = '__all__'
+
+    def clean_name(self): #função de django que valida se a marca ja existe no banco
+        name = self.cleaned_data.get('name')
+        if Brand.objects.filter(name__iexact=name).exists():
+            self.add_error('name', 'Marca já está registrada!')
+        return name
