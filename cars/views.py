@@ -1,56 +1,46 @@
-from django.shortcuts import render, redirect
-from django.views import View
-
+from django.template.base import kwarg_re
+from django.urls import reverse_lazy
+from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from cars.models import Car, Brand
 from cars.forms import CarModelForm, BrandModelForm
 
-class CarsViews(View):
+class CarListView(ListView):
+    model = Car
+    template_name = 'cars.html'
+    context_object_name = 'cars'
 
-    def get(self, request):
-        search = request.GET.get('search')
-        cars = Car.objects.all().order_by('model')
-
+    def get_queryset(self):
+        cars = super().get_queryset().order_by('model')
+        search = self.request.GET.get('search')
         if search:
-            cars = cars.filter(model__icontains=search)  # filtra pelo modelo do veiculo
+            cars = cars.filter(model__icontains =search)
+        return cars
 
-        return render(  # renderiza na url
-            request,
-            'cars.html',
-            {'cars': cars},  # cars remete a classe Car dentro do banco de dados
-        )
+class NewCarCreateView(CreateView):
+    model = Car
+    form_class = CarModelForm
+    template_name = 'new_car.html'
+    success_url = '/cars/'
 
-class NewCarView(View):
+class NewBrandView(CreateView):
+    model = Car.brand
+    form_class = BrandModelForm
+    template_name = 'new_brand.html'
+    success_url = '/cars/'
 
-    def get(self, request):
-        new_car_form = CarModelForm()
-        return render(
-            request,
-            'new_car.html',
-            {'new_car_form': new_car_form}
-        )
+class CarDetailView(DetailView):
+    model = Car
+    template_name = 'car_detail.html'
 
-    def post(self, request):
-        new_car_form = CarModelForm(request.POST, request.FILES)
-        if new_car_form.is_valid():
-            new_car_form.save()
-            return redirect('cars_list')
-        return render(
-            request,
-            'new_car.html',
-            {'new_car_form': new_car_form}
-        )
+class CarUpdateView(UpdateView):
+    model = Car
+    form_class = CarModelForm
+    template_name = 'car_update.html'
 
+    def get_success_url(self):
+        return reverse_lazy('car_detail', kwargs={'pk': self.object.pk})
 
-def new_brand_view(request):
-    if request.method == 'POST':
-        new_brand_form = BrandModelForm(request.POST, request.FILES)
-        if new_brand_form.is_valid():
-            new_brand_form.save()
-            return redirect('cars_list')
-    else:
-        new_brand_form = BrandModelForm()
-    return render(
-        request,
-        'new_brand.html',
-        {'new_brand_form': new_brand_form}
-    )
+class CarDeleteView(DetailView):
+    model = Car
+    template_name = 'car_delete.html'
+    success_url = '/cars/'
